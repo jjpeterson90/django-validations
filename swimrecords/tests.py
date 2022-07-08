@@ -46,8 +46,8 @@ class SwimRecordTestCase(TestCase):
         try:
             stroke_record.full_clean()
             raise Exception("full_clean should throw a validation error")
-        except ValidationError as e:
-            self.assertTrue("doggie paddle is not a valid stroke" in e.message_dict['stroke'])
+        except:
+            self.assertTrue("doggie paddle is not a valid stroke" in ValidationError.message_dict['stroke'])
 
     def test_06_valid_distance(self):
         """must be greater than or equal to 50"""
@@ -61,6 +61,7 @@ class SwimRecordTestCase(TestCase):
     def test_07_no_future_records(self):
         """does not allow records to be set in the future"""
         bad_date = timezone.now() + timedelta(days=1)
+        print('bad date: ', bad_date)
         record = SwimRecord(record_date=bad_date)
         try:
             record.full_clean()
