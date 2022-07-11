@@ -1,11 +1,17 @@
+from email.policy import default
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 
-def relay_check(stroke):
-    list = ['front crawl', 'butterfly', 'breast', 'back', 'freestyle']
-    if stroke not in list:
+def relay_check(relay):
+    options = ['True', 'False']
+    if relay not in options:
+        raise ValidationError("'None' value must be either True or False.")
+
+def stroke_check(stroke):
+    options = ['front crawl', 'butterfly', 'breast', 'back', 'freestyle']
+    if stroke not in options:
         raise ValidationError(f"{stroke} is not a valid stroke")
     
 def distance_check(distance):
@@ -18,16 +24,17 @@ def record_date_check(record_date):
     if record_date > now:
         raise ValidationError("Can't set record in the future.")
     
-def record_broken_check(record_broken_date):
-    if record_broken_date < timezone.now():
-        raise ValidationError("Can't break record before record was set.")
-    
 class SwimRecord(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     team_name = models.CharField(max_length=255)
-    relay = models.BooleanField(default=False)
-    stroke = models.CharField(max_length=255, validators=[relay_check])
+    relay = models.BooleanField(default=False, validators=[relay_check])
+    stroke = models.CharField(max_length=255, validators=[stroke_check])
     distance = models.IntegerField(validators=[distance_check])
     record_date = models.DateTimeField(validators=[record_date_check])
-    record_broken_date = models.DateTimeField(validators=[record_broken_check])
+    record_broken_date = models.DateTimeField()
+
+    def clean(self):
+        if self.record_broken_date != None and self.record_date != None:
+            if self.record_broken_date < self.record_date:
+                raise ValidationError({'record_broken_date': ["Can't break record before record was set."]})
